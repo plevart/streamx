@@ -41,10 +41,6 @@ public class Test {
         void setPrice(double price) {
             this.price = price;
         }
-
-        void display() {
-            System.out.print("age: " + age + ", hasCoupon: " + hasCoupon + ", price: " + price);
-        }
     }
 
     static void test1(List<Person> people) {
@@ -63,23 +59,10 @@ public class Test {
             .forEach(p -> {
                 p.setPrice(p.getPrice() - 2.00);
             });
-
-        people.parallelStream()
-            .filter(p -> (p.getAge() < 12 || p.getAge() >= 65))
-            .forEach(p -> {
-                p.setPrice(5.25);
-            });
-
-        people.stream()
-            .forEach(p -> {
-                p.display();
-            });
-
-        double priceSum = people.stream().mapToDouble(p -> p.getPrice()).sum();
-        System.out.println("priceSum: " + priceSum);
     }
 
     static void test2(List<Person> people) {
+
         UnaryOperator<Stream<Person>> commonOps = (stream) ->
             stream
                 .filter(p -> p.getAge() >= 12)
@@ -101,7 +84,7 @@ public class Test {
 
     static void test4(List<Person> people) {
 
-        Streamable<Person> peoples = people::stream;
+        Streamable<Person> peoples = people::parallelStream;
 
         Streamable<Person> filteredPeoples = peoples
             .filter(p -> p.getAge() >= 12)
