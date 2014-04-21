@@ -5,31 +5,34 @@
  */
 package si.pele.streamx;
 
-import java.util.function.IntConsumer;
-import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
-import java.util.function.IntToDoubleFunction;
-import java.util.function.IntToLongFunction;
-import java.util.function.IntUnaryOperator;
-import java.util.stream.FlatMapper;
+import java.util.function.*;
 import java.util.stream.IntStream;
 
 /**
- * SAM Factory for {@link java.util.stream.IntStream} instances.<p>
- * What {@link Iterable} is to {@link java.util.Iterator}, {@link IntStreamable} is to {@link java.util.stream.IntStream} and more.
- * It is also a builder of non-terminal operations with an API parallel to {@link java.util.stream.IntStream}'s API for
+ * SAM Factory for {@link IntStream} instances.<p>
+ * What {@link Iterable} is to {@link java.util.Iterator}, {@link IntStreamable} is to {@link IntStream} and more.
+ * It is also a builder of non-terminal operations with an API parallel to {@link IntStream}'s API for
  * non-terminal operations.
  *
  * @see #stream()
  * @see Streamable
  */
+@FunctionalInterface
 public interface IntStreamable {
 
     /**
-     * @return Newly constructed {@link java.util.stream.IntStream} with all the stacked non-terminal operations
+     * @return Newly constructed {@link IntStream} with all the stacked non-terminal operations
      *         applied and ready to be consumed.
      */
     IntStream stream();
+
+    /**
+     * @return Newly constructed {@link AC#intStream auto-closing} {@link IntStream} with all the stacked non-terminal operations
+     *         applied and ready to be consumed.
+     */
+    default IntStream autoClosingStream() {
+        return AC.intStream(stream());
+    }
 
     // non-terminal operations
 
@@ -57,10 +60,6 @@ public interface IntStreamable {
         return () -> stream().flatMap(mapper);
     }
 
-    default IntStreamable flatMap(FlatMapper.OfIntToInt mapper) {
-        return () -> stream().flatMap(mapper);
-    }
-
     default IntStreamable distinct() {
         return () -> stream().distinct();
     }
@@ -77,12 +76,16 @@ public interface IntStreamable {
         return () -> stream().limit(maxSize);
     }
 
-    default IntStreamable substream(long startingOffset) {
-        return () -> stream().substream(startingOffset);
+    default IntStreamable skip(long n) {
+        return () -> stream().skip(n);
     }
 
-    default IntStreamable substream(long startingOffset, long endingOffset) {
-        return () -> stream().substream(startingOffset, endingOffset);
+    default LongStreamable asLongStreamable() {
+        return () -> stream().asLongStream();
+    }
+
+    default DoubleStreamable asDoubleStreamable() {
+        return () -> stream().asDoubleStream();
     }
 
     default Streamable<Integer> boxed() {

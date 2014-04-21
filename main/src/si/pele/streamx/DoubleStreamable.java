@@ -5,31 +5,34 @@
  */
 package si.pele.streamx;
 
-import java.util.function.DoubleConsumer;
-import java.util.function.DoubleFunction;
-import java.util.function.DoublePredicate;
-import java.util.function.DoubleToIntFunction;
-import java.util.function.DoubleToLongFunction;
-import java.util.function.DoubleUnaryOperator;
+import java.util.function.*;
 import java.util.stream.DoubleStream;
-import java.util.stream.FlatMapper;
 
 /**
- * SAM Factory for {@link java.util.stream.DoubleStream} instances.<p>
- * What {@link Iterable} is to {@link java.util.Iterator}, {@link DoubleStreamable} is to {@link java.util.stream.DoubleStream} and more.
- * It is also a builder of non-terminal operations with an API parallel to {@link java.util.stream.DoubleStream}'s API for
+ * SAM Factory for {@link DoubleStream} instances.<p>
+ * What {@link Iterable} is to {@link java.util.Iterator}, {@link DoubleStreamable} is to {@link DoubleStream} and more.
+ * It is also a builder of non-terminal operations with an API parallel to {@link DoubleStream}'s API for
  * non-terminal operations.
  *
  * @see #stream()
  * @see Streamable
  */
+@FunctionalInterface
 public interface DoubleStreamable {
 
     /**
-     * @return Newly constructed {@link java.util.stream.DoubleStream} with all the stacked non-terminal operations
+     * @return Newly constructed {@link DoubleStream} with all the stacked non-terminal operations
      *         applied and ready to be consumed.
      */
     DoubleStream stream();
+
+    /**
+     * @return Newly constructed {@link AC#doubleStream auto-closing} {@link DoubleStream} with all the stacked non-terminal operations
+     *         applied and ready to be consumed.
+     */
+    default DoubleStream autoClosingStream() {
+        return AC.doubleStream(stream());
+    }
 
     // non-terminal operations
 
@@ -57,10 +60,6 @@ public interface DoubleStreamable {
         return () -> stream().flatMap(mapper);
     }
 
-    default DoubleStreamable flatMap(FlatMapper.OfDoubleToDouble mapper) {
-        return () -> stream().flatMap(mapper);
-    }
-
     default DoubleStreamable distinct() {
         return () -> stream().distinct();
     }
@@ -77,12 +76,8 @@ public interface DoubleStreamable {
         return () -> stream().limit(maxSize);
     }
 
-    default DoubleStreamable substream(long startingOffset) {
-        return () -> stream().substream(startingOffset);
-    }
-
-    default DoubleStreamable substream(long startingOffset, long endingOffset) {
-        return () -> stream().substream(startingOffset, endingOffset);
+    default DoubleStreamable skip(long n) {
+        return () -> stream().skip(n);
     }
 
     default Streamable<Double> boxed() {

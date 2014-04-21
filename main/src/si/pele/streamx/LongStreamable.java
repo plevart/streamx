@@ -5,31 +5,34 @@
  */
 package si.pele.streamx;
 
-import java.util.function.LongConsumer;
-import java.util.function.LongFunction;
-import java.util.function.LongPredicate;
-import java.util.function.LongToDoubleFunction;
-import java.util.function.LongToIntFunction;
-import java.util.function.LongUnaryOperator;
-import java.util.stream.FlatMapper;
+import java.util.function.*;
 import java.util.stream.LongStream;
 
 /**
- * SAM Factory for {@link java.util.stream.LongStream} instances.<p>
- * What {@link Iterable} is to {@link java.util.Iterator}, {@link LongStreamable} is to {@link java.util.stream.LongStream} and more.
- * It is also a builder of non-terminal operations with an API parallel to {@link java.util.stream.LongStream}'s API for
+ * SAM Factory for {@link LongStream} instances.<p>
+ * What {@link Iterable} is to {@link java.util.Iterator}, {@link LongStreamable} is to {@link LongStream} and more.
+ * It is also a builder of non-terminal operations with an API parallel to {@link LongStream}'s API for
  * non-terminal operations.
  *
  * @see #stream()
  * @see Streamable
  */
+@FunctionalInterface
 public interface LongStreamable {
 
     /**
-     * @return Newly constructed {@link java.util.stream.LongStream} with all the stacked non-terminal operations
+     * @return Newly constructed {@link LongStream} with all the stacked non-terminal operations
      *         applied and ready to be consumed.
      */
     LongStream stream();
+
+    /**
+     * @return Newly constructed {@link AC#longStream auto-closing} {@link LongStream} with all the stacked non-terminal operations
+     *         applied and ready to be consumed.
+     */
+    default LongStream autoClosingStream() {
+        return AC.longStream(stream());
+    }
 
     // non-terminal operations
 
@@ -57,10 +60,6 @@ public interface LongStreamable {
         return () -> stream().flatMap(mapper);
     }
 
-    default LongStreamable flatMap(FlatMapper.OfLongToLong mapper) {
-        return () -> stream().flatMap(mapper);
-    }
-
     default LongStreamable distinct() {
         return () -> stream().distinct();
     }
@@ -77,12 +76,12 @@ public interface LongStreamable {
         return () -> stream().limit(maxSize);
     }
 
-    default LongStreamable substream(long startingOffset) {
-        return () -> stream().substream(startingOffset);
+    default LongStreamable skip(long n) {
+        return () -> stream().skip(n);
     }
 
-    default LongStreamable substream(long startingOffset, long endingOffset) {
-        return () -> stream().substream(startingOffset, endingOffset);
+    default DoubleStreamable asDoubleStreamable() {
+        return () -> stream().asDoubleStream();
     }
 
     default Streamable<Long> boxed() {

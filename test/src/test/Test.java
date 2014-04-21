@@ -5,10 +5,14 @@
  */
 package test;
 
+import si.pele.streamx.AC;
+import si.pele.streamx.IO;
 import si.pele.streamx.Streamable;
 
-import java.util.List;
-import java.util.function.UnaryOperator;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 /**
@@ -16,93 +20,37 @@ import java.util.stream.Stream;
  */
 public class Test {
 
-    static class Person {
-        final int age;
-        final boolean hasCoupon;
-        double price;
+    public static void main(String[] args) throws IOException {
 
-        Person(int age, boolean hasCoupon) {
-            this.age = age;
-            this.hasCoupon = hasCoupon;
+        // using auto-closing Stream wrapper...
+
+        AC.stream(Files.walk(Paths.get("/usr/share/doc")))     // walk paths in directory - close after terminal op.
+            .filter(p -> p.toFile().isFile())                  // just take normal files
+            .filter(p -> p.toString().endsWith(".txt"))        // and text files among them
+            .peek(p -> System.out.printf("\n#\n# %s\n#\n", p)) // print out file path as header
+            .flatMap(IO.function(Files::lines))                // dump lines (flatMap closes the lines stream)
+            .forEach(System.out::println);                     // print them out
+
+        // ...using Streamable functional interface as a factory for streams
+
+        Streamable.IO<Path> docs = () -> Files.walk(Paths.get("/usr/share/doc")); // factory of path walk streams
+
+        Streamable<String> lines = docs                        // factory of lines streams
+            .filter(p -> p.toFile().isFile())                  // just take normal files
+            .filter(p -> p.toString().endsWith(".txt"))        // and text files among them
+            .peek(p -> System.out.printf("\n#\n# %s\n#\n", p)) // print out file path as header
+            .flatMap(IO.function(Files::lines));               // dump lines (flatMap closes the lines stream)
+
+        // ... invoke the factory and consume the stream...
+
+        lines
+            .autoClosingStream()                               // request an auto-closing stream
+            .forEach(System.out::println);                     // print them out
+
+        // or
+
+        try (Stream<String> linesStream = lines.stream()) {    // use try-with-resources on normal stream
+            linesStream.forEach(System.out::println);          // print them out
         }
-
-        int getAge() {
-            return age;
-        }
-
-        boolean hasCoupon() {
-            return hasCoupon;
-        }
-
-        double getPrice() {
-            return price;
-        }
-
-        void setPrice(double price) {
-            this.price = price;
-        }
-    }
-
-    static void test1(List<Person> people) {
-
-        people.parallelStream()
-            .filter(p -> p.getAge() >= 12)
-            .filter(p -> p.getAge() < 65)
-            .forEach(p -> {
-                p.setPrice(9.25);
-            });
-
-        people.parallelStream()
-            .filter(p -> p.getAge() >= 12)
-            .filter(p -> p.getAge() < 65)
-            .filter(p -> p.hasCoupon())
-            .forEach(p -> {
-                p.setPrice(p.getPrice() - 2.00);
-            });
-    }
-
-    static void test2(List<Person> people) {
-
-        UnaryOperator<Stream<Person>> commonOps = (stream) ->
-            stream
-                .filter(p -> p.getAge() >= 12)
-                .filter(p -> p.getAge() < 65);
-
-        commonOps
-            .apply(people.parallelStream())
-            .forEach(p -> {
-                p.setPrice(9.25);
-            });
-
-        commonOps
-            .apply(people.parallelStream())
-            .filter(p -> p.hasCoupon())
-            .forEach(p -> {
-                p.setPrice(p.getPrice() - 2.00);
-            });
-    }
-
-    static void test4(List<Person> people) {
-
-        Streamable<Person> peoples = people::parallelStream;
-
-        Streamable<Person> filteredPeoples = peoples
-            .filter(p -> p.getAge() >= 12)
-            .filter(p -> p.getAge() < 65);
-
-        filteredPeoples.stream()
-            .forEach(p -> {
-                p.setPrice(9.25);
-            });
-
-        filteredPeoples.stream()
-            .filter(p -> p.hasCoupon())
-            .forEach(p -> {
-                p.setPrice(p.getPrice() - 2.00);
-            });
-    }
-
-    public static void main(String[] args) {
-
     }
 }
